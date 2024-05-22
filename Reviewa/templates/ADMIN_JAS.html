@@ -1,0 +1,209 @@
+{% extends "layout.html" %}
+
+{% block body %}
+        <div>
+    {% if user.store.count > 1 %}
+        <label for="businessSelect">Select Business:</label>
+        <select id="businessSelect" onchange="store()">
+            <option value="0" {% if selected_business is None %}selected{% endif %}>All</option>
+            {% for business in user.store.all %}
+                <option value="{{ business.id }}" {% if selected_business and selected_business.id == business.id %}selected{% endif %}>{{ business.store_name }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+</div>
+
+
+    <h2>Feedbacks</h2>
+
+
+       <div>
+            <label for="selectUser">Select User:</label>
+            <select id="selectUser" >
+                <option value="0" {% if selected_user is None %}selected{% endif %}>All</option>
+                {% for user in all_users %}
+                    <option value="{{ user.id }}" {% if selected_user == user.id %}selected{% endif %}>{{ user.get_full_name }}</option>
+                {% endfor %}
+                <option value="anonymous" {% if selected_user == 'anonymous' %}selected{% endif %}>Anonymous</option>
+            </select>
+       </div>
+
+
+        <div>
+            <label for="selectProduct">Select Product:</label>
+            <select id="selectProduct" >
+                <option value="0" {% if selected_product is None %}selected{% endif %}>All</option>
+                {% for product in products %}
+                    <option value="{{ product.id }}" {% if selected_product == product.id %}selected{% endif %}>{{ product.product_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="selectRate">Select Rate:</label>
+            <select id="selectRate" >
+                <option value="0" {% if selected_rate is None %}selected{% endif %}>All</option>
+                {% for rate in "12345" %}
+                    <option value="{{ rate }}" {% if selected_rate == rate %}selected{% endif %}>{{ rate }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="selectDate">Select Date:</label>
+            <input type="date" id="selectDate" >
+        </div>
+        <div>
+            <button onclick="applyFilters()">Apply Filters</button>
+        </div>
+    {% if feedbacks %}
+        <!-- Dropdowns for selecting parameters -->
+
+
+        <table class="feedback-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Business</th>
+                    <th>Product</th>
+                    <th>Rate</th>
+                    <th>Comment</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feedback in feedbacks %}
+                    <tr>
+                        <td>
+                            {% if feedback.user %}
+                                {{ feedback.user.get_full_name }}
+                            {% else %}
+                                Anonymous
+                            {% endif %}
+                        </td>
+                        <td>{{ feedback.product.business }}</td>
+                        <td>{{ feedback.product }}</td>
+                        <td>{{ feedback.rate }}</td>
+                        <td>{{ feedback.comment }}</td>
+                        <td>{{ feedback.time_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No feedbacks yet.</p>
+    {% endif %}
+
+    <h2>Statistics</h2>
+
+    <h3>Number of Feedbacks per Product:</h3>
+    <ul>
+        {% for product_item in feedbacks_per_product %}
+            <li>
+                <a href="{% url 'admin_product' product_id=product_item.product__id %}">{{ product_item.product__product_name }}</a>: {{ product_item.count }}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <style>
+        .feedback-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .feedback-table th, .feedback-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .feedback-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+
+
+
+{% if user.store.count > 1 %}
+<script>
+function applyFilters() {
+    // Get selected values from dropdowns and input fields
+    var selectedUser = document.getElementById("selectUser").value;
+    var selectedProduct = document.getElementById("selectProduct").value;
+    var selectedRate = document.getElementById("selectRate").value;
+    var selectedDate = document.getElementById("selectDate").value;
+    var selectedBusiness = document.getElementById("businessSelect").value;
+
+    // Store selected business ID in local storage
+    localStorage.setItem("selectedBusiness", selectedBusiness);
+
+    // Construct the URL with selected parameters
+    var url = "{% url 'n' %}?";
+    url += selectedUser !== '0' ? "user=" + selectedUser + "&" : "";
+    url += selectedProduct !== '0' ? "product=" + selectedProduct + "&" : "";
+    url += selectedRate !== '0' ? "rate=" + selectedRate + "&" : "";
+    url += selectedDate ? "date=" + selectedDate + "&" : "";
+    url += selectedBusiness !== '0' ? "business_id=" + selectedBusiness : "";
+
+    // Remove trailing '&' if present
+    url = url.endsWith('&') ? url.slice(0, -1) : url;
+
+    // Redirect to the constructed URL
+    window.location.href = url;
+}
+
+function store() {
+    var selectedBusiness = document.getElementById("businessSelect").value;
+    localStorage.setItem("selectedBusiness", selectedBusiness);
+    // Construct the URL with the selected business ID
+    var url = "{% url 'n' %}?business_id=" + selectedBusiness;
+    // Redirect to the constructed URL
+    window.location.href = url;
+}
+
+window.onload = function() {
+    var selectedBusiness = localStorage.getItem("selectedBusiness");
+    if (selectedBusiness) {
+        document.getElementById("businessSelect").value = selectedBusiness;
+    }
+}
+</script>
+{% else %}
+<script>
+    function applyFilters() {
+        // Get selected values from dropdowns and input fields
+        var selectedUser = document.getElementById("selectUser").value;
+        var selectedProduct = document.getElementById("selectProduct").value;
+        var selectedRate = document.getElementById("selectRate").value;
+        var selectedDate = document.getElementById("selectDate").value;
+
+        // Construct the URL with selected parameters
+        var url = "{% url 'n' %}?";
+        url += selectedUser !== '0' ? "user=" + selectedUser + "&" : "";
+        url += selectedProduct !== '0' ? "product=" + selectedProduct + "&" : "";
+        url += selectedRate !== '0' ? "rate=" + selectedRate + "&" : "";
+        url += selectedDate ? "date=" + selectedDate + "&" : "";
+
+        // Remove trailing '&' if present
+        url = url.endsWith('&') ? url.slice(0, -1) : url;
+
+        // Redirect to the constructed URL
+        window.location.href = url;
+    }
+
+    function store() {
+        var selectedBusiness = document.getElementById("businessSelect").value;
+        if (selectedBusiness) {
+            // Construct the URL with the selected business ID
+            var url = "{% url 'n' %}?business_id=" + selectedBusiness;
+            // Redirect to the constructed URL
+            window.location.href = url;
+        }
+}
+</script>
+{% endif %}
+
+
+
+{% endblock %}

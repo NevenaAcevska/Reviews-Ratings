@@ -1,0 +1,74 @@
+{% block content %}
+
+<h2>Feedbacks for Product: {{ product.product_name }}</h2>
+<h2>Average Rating: {{ average_rating.average_rate|default:"N/A" }}</h2>
+
+<h2>Number of Feedbacks: {{ feedback_count }}</h2>
+{% if all_feedbacks %}
+    <table class="feedback-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Rate</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feedback in all_feedbacks %}
+                <tr>
+                    <td>{{ feedback.user.first_name }} {{ feedback.user.last_name }}</td>
+                    <td>{{ feedback.rate }}</td>
+                    <td>{{ feedback.comment }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No feedbacks available for this product.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Feedback Distribution by Rating:</h2>
+    <table class="feedback-distribution-table">
+        <thead>
+            <tr>
+                <th>Rate</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in feedback_distribution %}
+                <tr>
+                    <td>{{ item.rate }}</td>
+                    <td>{{ item.count }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="2">No feedbacks available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No feedbacks available.</p>
+{% endif %}
+
+<style>
+    .feedback-table, .feedback-distribution-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .feedback-table th, .feedback-table td, .feedback-distribution-table th, .feedback-distribution-table td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .feedback-table th, .feedback-distribution-table th {
+        background-color: #f2f2f2;
+    }
+</style>
+
+{% endblock %}

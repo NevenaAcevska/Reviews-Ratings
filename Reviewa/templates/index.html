@@ -1,0 +1,135 @@
+{% extends "layout.html" %}
+{% load static %}
+{% block body %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Function to fetch and display products
+        function fetchProducts() {
+            $.ajax({
+                url: "{% url 'display_products' %}",
+                type: "GET",
+                dataType: "json",
+                success: function(response) {
+                    // Clear previous product listings and options
+                    $("#products").empty();
+                    $("#id_product").empty();
+                    $("#stars").empty();
+
+                    // Append new product listings and options
+                    $.each(response.products, function(index, product) {
+                        $("#products").append("<p><a href='/product_detail/" + product.id + "' class='product-link'>" + product.product_name + "</a></p>");
+                        $("#id_product").append("<option value='" + product.id + "'>" + product.product_name + "</option>");
+                    });
+
+                    // Add the rating options for 5 stars
+                    var ratingOptions = ['1', '2', '3', '4', '5'];
+
+                    $.each(ratingOptions, function(index, rating) {
+                        var starValue = parseFloat(rating);
+                        var starType = (starValue % 1 === 0) ? 'full' : 'half';
+                        $("#stars").append('<input type="radio" id="star' + rating.replace('.', '_') + '" name="rate" value="' + rating + '" data-star-type="' + starType + '" /><label for="star' + rating.replace('.', '_') + '" class="star-label"></label>');
+                    });
+
+                    $("#stars input[type='radio']").change(function() {
+                        var starIndex = $(this).attr('value');
+                        $("#stars .star-label").css("opacity", function(index) {
+                            var currentIndex = parseFloat($(this).prev().val());
+                            return currentIndex <= starIndex ? 1 : 0.5;
+                        });
+                    });
+                },
+                error: function(error) {
+                    console.log("Error fetching products:", error);
+                }
+            });
+        }
+
+        // Initial fetch of products
+        fetchProducts();
+
+        // Function to handle form submission (feedback)
+        $("#feedback-form").submit(function(event) {
+            event.preventDefault();
+
+            $.ajax({
+                url: $(this).attr("action"),
+                type: $(this).attr("method"),
+                data: $(this).serialize(),
+                dataType: "json",
+                success: function(response) {
+                    if (response.result === 'success') {
+                        console.log("Feedback submitted successfully.");
+                        // Reset the feedback form
+                        $("#feedback-form")[0].reset();
+                    } else {
+                        console.log("Error submitting feedback:", response.message);
+                    }
+                },
+                error: function(error) {
+                    console.log("Error submitting feedback:", error);
+                }
+            });
+        });
+    });
+</script>
+
+<div id="products">
+    <!-- Products will be displayed here -->
+</div>
+
+<form id="feedback-form" action="{% url 'feedback' %}" method="post">
+    {% csrf_token %}
+    <div>
+        <label for="id_product">Product:</label>
+        <select name="product" id="id_product">
+            <!-- Options will be populated here -->
+        </select>
+    </div>
+    <div>
+        <label for="id_rate">Rate:</label>
+        <div id="stars">
+            {% for choice in form.rate.field.widget.choices %}
+            <input type="radio" id="star{{ forloop.counter }}" name="{{ form.rate.name }}" value="{{ choice.0 }}" {% if form.rate.value|stringformat:"s" == choice.0 %}checked{% endif %} />
+            <label for="star{{ forloop.counter }}" class="star-label"></label>
+            {% endfor %}
+        </div>
+    </div>
+    <div>
+        <label for="id_comment">Comment:</label>
+        <textarea name="comment" id="id_comment" rows="4" cols="50"></textarea>
+    </div>
+    <button type="submit">Post</button>
+</form>
+
+<style>
+    .star-label {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-image: url('{% static "images/1200px-Empty_Star.svg.png" %}');
+        background-size: cover;
+        cursor: pointer;
+    }
+     input[type="radio"] + .star-label {
+            opacity: 0.5;
+        }
+    input[type="radio"] {
+        display: none; /* Hide the actual radio buttons */
+    }
+
+    input[type="radio"]:checked + .star-label {
+        opacity: 1; /* Reduce opacity for checked radio buttons to indicate selection */
+    }
+</style>
+
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <h1>Profile</h1>
+    <p>Username: {{ user.username }}</p>
+    <p>First name: {{ user.first_name }}</p>
+    <p>Last name: {{ user.last_name }}</p>
+    <p>Phone: {{ user.phone }}</p>
+
+   <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+
+    <h2>Feedbacks</h2>
+    <ul>
+        {% for feedback in user.feedback_set.all %}
+            <li>
+                <p>Product: {{ feedback.product }}</p>
+                <p>Rate: {{ feedback.rate }}</p>
+                <p>Comment: {{ feedback.comment }}</p>
+                <p>Date: {{ feedback.created_at }}</p>
+            </li>
+        {% empty %}
+            <li>No feedbacks yet.</li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

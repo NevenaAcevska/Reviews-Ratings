@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% load static %}
+{% block body %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        var ratingOptions = ['1', '2', '3', '4', '5'];
+        $.each(ratingOptions, function(index, rating) {
+            var starValue = parseFloat(rating);
+            var starType = (starValue % 1 === 0) ? 'full' : 'half';
+            $("#stars").append('<input type="radio" id="star' + rating.replace('.', '_') + '" name="rate" value="' + rating + '" data-star-type="' + starType + '" /><label for="star' + rating.replace('.', '_') + '" class="star-label"></label>');
+        });
+
+        // Function to set the opacity of stars based on radio button selection
+        $("#stars input[type='radio']").change(function() {
+            var starIndex = $(this).attr('value');
+            $("#stars .star-label").css("opacity", function(index) {
+                return index < starIndex ? 1 : 0.5;
+            });
+        });
+
+        // Function to handle form submission (feedback)
+        $("#feedback-form").submit(function(event) {
+            event.preventDefault();
+
+            $.ajax({
+                url: $(this).attr("action"),
+                type: $(this).attr("method"),
+                data: $(this).serialize(),
+                dataType: "json",
+                success: function(response) {
+                    if (response.result === 'success') {
+                        console.log("Feedback submitted successfully.");
+                        // Reset all stars to empty
+                        $("#stars .star-label").css("opacity", 0.5);
+                        $("#feedback-form")[0].reset();
+                        // Redirect to another page
+                        window.location.href = "{% url 'index' %}";
+                    } else {
+                        console.log("Error submitting feedback:", response.message);
+                    }
+                },
+                error: function(error) {
+                    console.log("Error submitting feedback:", error);
+                }
+            });
+        });
+    });
+</script>
+
+<form id="feedback-form" action="{% url 'feedback' %}" method="post">
+    {% csrf_token %}
+    <div>
+        <label for="id_product">Product:</label>
+        <span id="selected-product-name">{{ product.product_name }}</span>
+        <input type="hidden" name="product" value="{{ product.id }}">
+    </div>
+    <div>
+        <label for="id_rate">Rate:</label>
+        <div id="stars">
+            {% for choice in form.rate.field.widget.choices %}
+                <input type="radio" id="star{{ forloop.counter }}" name="{{ form.rate.name }}" value="{{ forloop.counter }}" {% if form.rate.value|stringformat:"s" == forloop.counter %}checked{% endif %} />
+                <label for="star{{ forloop.counter }}" class="star-label"></label>
+            {% endfor %}
+        </div>
+    </div>
+    <div>
+        <label for="id_comment">Comment:</label>
+        <textarea name="comment" id="id_comment" rows="4" cols="50"></textarea>
+    </div>
+    <button type="submit">Post</button>
+</form>
+
+<style>
+    .star-label {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-image: url('{% static "images/1200px-Empty_Star.svg.png" %}');
+        background-size: cover;
+        cursor: pointer;
+    }
+
+    input[type="radio"] {
+        display: none;
+    }
+
+    input[type="radio"] + .star-label {
+        opacity: 0.5;
+    }
+
+    input[type="radio"]:checked + .star-label {
+        opacity: 1;
+    }
+
+    .product-link {
+        text-decoration: none;
+        color: #000;
+    }
+
+    .product-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% endblock %}
